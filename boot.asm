@@ -1,5 +1,8 @@
-ORG 0x0000
+ORG 0x7c00
 BITS 16
+
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
 
 _start:
     jmp short start
@@ -9,73 +12,67 @@ _start:
 times 33 db 0
 
 start:
-    jmp 0x7c0:step2
-
-; AH = 02h
-; AL = number of sectors to read (must be nonzero)
-; CH = low eight bits of cylinder number
-; CL = sector number 1-63 (bits 0-5)
-; high two bits of cylinder (bits 6-7, hard disk only)
-; DH = head number
-; DL = drive number (bit 7 set for hard disk)
-; ES:BX -> data buffer
-
-; Return:
-; CF set on error
-; if AH = 11h (corrected ECC error), AL = burst length
-; CF clear if successful
-; AH = status (see #00234)
-; AL = number of sectors transferred (only valid if CF set for some BIOSes)
+    jmp 0:step2
 
 step2:
     cli ; clear interupts
-    mov ax, 0x7c0
+    mov ax, 0x00
     mov ds, ax
     mov es, ax
-    mov ax, 0x00
     mov ss, ax
     mov sp, 0x7c00
     sti ; enables interupts
 
-    mov ah, 2 ; read sector command
-    mov al, 1 ; read one sector
-    mov ch, 0 ; cylinder number
-    mov cl, 2 ; read sector two
-    mov dh, 0 ; head number
-    mov bx, buffer
+.load_protected:
+    cli
+    lgdt[gdt_descriptor]
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+    jmp CODE_SEG:load32
 
-    int 0x13
-    jc error
+; GDT
 
-    mov si, buffer
-    call print
+gdt_start:
+gdt_null:
+    dd 0x00
+    dd 0x00
+
+; offset 0x8
+gdt_code:     ; cs should point to this
+    dw 0xffff ; Segment limit first 0-15 bits
+    dw 0      ; base first 0-15
+    db 0      ; base 16-23 bits
+    db 0x9a   ; addess byte
+    db 11001111b ; high 4 bit flags and the low 4 bit flags
+    db 0      ; base 24-31 bits
+
+; offest 0x10
+gdt_data:     ; ds, ss, es, fs, gs
+    dw 0xffff ; Segment limit first 0-15 bits
+    dw 0      ; base first 0-15
+    db 0      ; base 16-23 bits
+    db 0x92   ; addess byte
+    db 11001111b ; high 4 bit flags and the low 4 bit flags
+    db 0      ; base 24-31 bits
+
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
+[BITS 32]
+load32:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov ebp, 0x00200000
+    mov esp, ebp
     jmp $
-
-error:
-    mov si, error_message
-    call print
-
-    jmp $
-
-print:
-    mov bx, 0
-.loop:
-    lodsb
-    cmp al, 0
-    je .done
-    call print_char
-    jmp .loop
-.done:
-    ret
-
-print_char:
-    mov ah, 0eh
-    int 0x10
-    ret
-
-error_message: db 'Failed to load sector', 0
 
 times 510-($ - $$) db 0
 dw 0xAA55
-
-buffer:
