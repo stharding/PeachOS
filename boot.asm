@@ -1,9 +1,17 @@
 ORG 0x0000
 BITS 16
 
-jmp 0x7c0:start
+_start:
+    jmp short start
+    nop
+
+; to make room for BIOS Parameter Block
+times 33 db 0
 
 start:
+    jmp 0x7c0:step2
+
+step2:
     cli ; clear interupts
     mov ax, 0x7c0
     mov ds, ax
