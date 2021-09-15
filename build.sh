@@ -6,4 +6,5 @@ export PATH="$HOME/udemny/PeachOS/cross/opt/cross/bin/:$PATH"
 
 mkdir -p build
 
+make clean
 make all
