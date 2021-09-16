@@ -1,5 +1,6 @@
 #include "kernel.h"
-#include "idt.h"
+#include "idt/idt.h"
+#include "io/io.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -68,7 +69,9 @@ void print(const char *str)
 void kernel_main()
 {
     terminal_initialize();
-    // initialize
-    idt_init();
     print("Hello world!\nbahaha\n");
+    // initialize the interupt descriptor table
+    idt_init();
+
+    outb(0x60, 0xff);
 }
