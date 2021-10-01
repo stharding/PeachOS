@@ -6,7 +6,7 @@ export PATH="$HOME/udemny/PeachOS/cross/opt/cross/bin/:$PATH"
 
 mkdir -p build/idt
 mkdir -p build/io
-mkdir -p build/memory
+mkdir -p build/memory/heap
 
 make clean
 make all
