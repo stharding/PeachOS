@@ -70,20 +70,14 @@ void print(const char *str)
 void kernel_main()
 {
     terminal_initialize();
-    print("Hello world!\nbahaha\n");
+    print("Hello world!\n");
 
-    // initialize the interupt descriptor table
-    idt_init();
     // initialize the heap
     kheap_init();
 
-    void *ptr = kmalloc(50);
-    void *ptr2 = kmalloc(5000);
-    void *ptr3 = kmalloc(5600);
-    kfree(ptr);
-    void *ptr4 = kmalloc(50);
+    // initialize the interupt descriptor table
+    idt_init();
 
-    if (ptr || ptr2 || ptr3 || ptr4)
-    {
-    }
+    // enable system interrupts
+    enable_interupts();
 }
